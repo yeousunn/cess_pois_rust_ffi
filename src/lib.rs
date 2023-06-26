@@ -20,8 +20,9 @@ use std::os::raw::{c_long, c_char, c_int};
 use std::time::Instant;
 
 type PerformPoisFunc = unsafe extern "C" fn(*mut c_char, *mut c_char, c_long, c_long, c_long);
-// CreateChallengeFunc(CommitC, length, key_n, key_g, k, n, d, chal, chal_length)
-type CreateChallengeFunc = unsafe extern "C" fn(*mut CommitC, c_long, *mut c_char, *mut c_char, c_long, c_long, c_long, *mut *mut c_long, *mut c_long);
+
+// CreateChallengeFunc(CommitC, length, key_n, key_g, k, n, d) -> [][]i64, []i64, i64
+type CreateChallengeFunc = unsafe extern "C" fn(*mut CommitC, c_long, *mut c_char, *mut c_char, c_long, c_long, c_long) -> (*const *const i64, *const i64, i64);
 
 
 
@@ -34,7 +35,7 @@ type GetByteArrayOfArrayFunc = unsafe extern "C" fn(*mut *mut u8, c_int, *mut c_
 
 type GetArrayFunc = extern "C" fn() -> (*const c_int, *const c_int);
 type FreeArrayFunc = extern "C" fn(*const c_int);
-type GetArrayOfArrayFunc = extern "C" fn() -> (*const *const i32, *const i32, i32);
+type GetArrayOfArrayFunc = extern "C" fn() -> (*const *const i64, *const i64, i64);
 
 fn load_library() -> Library {
     unsafe {
@@ -212,6 +213,20 @@ pub fn call_return_an_array() {
     }
 }
 
+fn c_pointer_to_i64_array_of_array(c_arrays: *const *const i64, c_lengths: *const i64, main_array_length: i64) -> Vec<Vec<i64>>{
+    let mut arr_of_arr: Vec<Vec<i64>> = Vec::new();
+    unsafe{
+        let arrays = std::slice::from_raw_parts(c_arrays, main_array_length as usize);
+        let lengths = std::slice::from_raw_parts(c_lengths, main_array_length as usize);
+    
+        for i in 0..main_array_length {
+            let sub_array = std::slice::from_raw_parts(arrays[i as usize], lengths[i as usize] as usize);
+            arr_of_arr.push(sub_array.to_vec());
+        }
+    }
+    arr_of_arr
+}
+
 pub fn call_return_array_of_array(){
     // Load the Go shared library
     let lib = load_library();
@@ -222,18 +237,9 @@ pub fn call_return_array_of_array(){
 
         let (c_arrays, c_lengths, main_array_length) = get_array_of_array();
 
-        let arrays = std::slice::from_raw_parts(c_arrays, main_array_length as usize);
-        let lengths = std::slice::from_raw_parts(c_lengths, main_array_length as usize);
-
-        println!("Main Array Length: {}", main_array_length);
-        let mut arrOfArr: Vec<&[i32]> = Vec::new();
-        for i in 0..main_array_length {
-            let sub_array = std::slice::from_raw_parts(arrays[i as usize], lengths[i as usize] as usize);
-
-            println!("Array {}: {:?}", i + 1, sub_array);
-            arrOfArr.push(sub_array);
-        }
-        println!("Array {:?}", arrOfArr);
+        let array = c_pointer_to_i64_array_of_array(c_arrays, c_lengths, main_array_length);
+        
+        println!("Array {:?}", array);
 
     }
 }
@@ -290,12 +296,8 @@ pub fn call_create_challenge(commits: &mut [Commit], key_n: BigUint, key_g: BigU
             commits_c.push(commit_c);
         }
 
-        // Prepare the variables to receive the challenges
-        let mut chals: *mut *mut c_long = std::ptr::null_mut();
-        let mut chals_length: c_long = 0;
-
         // Call the CreateChallenge function
-        create_challenge(
+        let (c_arrays, c_lengths, main_array_length) = create_challenge(
             commits_c.as_mut_ptr(), 
             commits_c.len() as c_long,
             n_cstring.into_raw() as *mut c_char,
@@ -303,35 +305,11 @@ pub fn call_create_challenge(commits: &mut [Commit], key_n: BigUint, key_g: BigU
             k,
             n,
             d,
-            chals,
-            &mut chals_length,
         );
 
-        // Convert the challenges to a Vec<Vec<i64>> in Rust
-         let mut result: Vec<Vec<i64>> = Vec::new();
-         for i in 0..chals_length {
-             let chal_ptr = *chals.offset(i as isize);
-             let chal_slice = std::slice::from_raw_parts(chal_ptr, n as usize);
-             let chal_vec = chal_slice.iter().copied().collect();
-             result.push(chal_vec);
-         }
-
-         println!("result: {:?}", result);
- 
-        // // Free the memory allocated for roots, subRootsLengths, and challenges
-        // for commit_c in commits_c.iter() {
-        //     for i in 0..commit_c.roots_length {
-        //         libc::free(*commit_c.roots.offset(i as isize) as *mut libc::c_void);
-        //     }
-        //     libc::free(commit_c.roots as *mut libc::c_void);
-        //     libc::free(commit_c.sub_roots_lengths as *mut libc::c_void);
-        // }
-        // for i in 0..chals_length {
-        //     libc::free(*chals.offset(i as isize) as *mut libc::c_void);
-        // }
-        // libc::free(chals as *mut libc::c_void);
-
-        result
+        let challenge = c_pointer_to_i64_array_of_array(c_arrays, c_lengths, main_array_length);
+        
+        challenge
     }
 }
 
@@ -374,9 +352,9 @@ mod tests {
         let key_n = rsa_key.n;
         let key_g = rsa_key.g;
 
-        let k: i64 = 7; // Replace with the actual value
-        let n: i64 = 1024 * 1024 * 4; // Replace with the actual value
-        let d: i64 = 64; // Replace with the actual value
+        let k: i64 = 7;
+        let n: i64 = 1024 * 1024 * 4;
+        let d: i64 = 64;
         call_perform_pois(
             key_n,
             key_g,
@@ -398,9 +376,9 @@ mod tests {
         let key_n = rsa_key.n;
         let key_g = rsa_key.g;
 
-        let k: i64 = 7; // Replace with the actual value
-        let n: i64 = 1024 * 1024; // Replace with the actual value
-        let d: i64 = 64; // Replace with the actual value
+        let k: i64 = 7;
+        let n: i64 = 1024 * 1024 * 4;
+        let d: i64 = 64;
 
         let mut commits = vec![
             Commit {
@@ -438,5 +416,5 @@ mod tests {
     fn test_call_return_array_of_array(){
         call_return_array_of_array()
     }
-    
+
 }
