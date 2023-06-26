@@ -3,15 +3,11 @@ mod ffi;
 mod types;
 mod utils;
 
-use libloading::Symbol;
-
-use utils::load_library;
-
-use c_types::MyByte; // Dummy Type for testing
-
-use std::os::raw::{c_char, c_int, c_long};
-
 use crate::utils::c_pointer_to_i64_array_of_array;
+use c_types::MyByte; // Dummy Type for testing
+use libloading::Symbol;
+use std::os::raw::{c_char, c_int, c_long};
+use utils::load_library;
 
 // Dummy function signatures
 type GetByteArrayFunc = unsafe extern "C" fn(*mut c_char, c_long);

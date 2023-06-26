@@ -4,7 +4,7 @@ use num_bigint_dig::BigUint;
 use crate::{
     c_types::CommitC,
     types::Commit,
-    utils::{c_pointer_to_i64_array_of_array, load_library},
+    utils::{c_pointer_to_i64_array_of_array, load_library, commit_to_commit_c},
 };
 use std::{
     ffi::CString,
@@ -78,40 +78,7 @@ pub fn call_create_challenge(
         let g_str = key_g.to_string();
         let g_cstring = CString::new(g_str).expect("CString conversion failed");
 
-        // Prepare the CommitC struct
-        let mut commits_c: Vec<CommitC> = Vec::with_capacity(commits.len());
-
-        for commit in commits.iter() {
-            let roots_len = commit.roots.len() as i32;
-            let mut roots_ptr: *mut *mut u8 = std::ptr::null_mut();
-            let mut sub_roots_lengths_ptr: *mut i32 = std::ptr::null_mut();
-
-            if roots_len > 0 {
-                roots_ptr = libc::malloc((roots_len as usize) * std::mem::size_of::<*mut u8>())
-                    as *mut *mut u8;
-                sub_roots_lengths_ptr =
-                    libc::malloc((roots_len as usize) * std::mem::size_of::<i32>()) as *mut i32;
-
-                for (i, root) in commit.roots.iter().enumerate() {
-                    let root_len = root.len();
-                    let root_ptr = libc::malloc(root_len) as *mut u8;
-                    std::ptr::copy_nonoverlapping(root.as_ptr(), root_ptr, root_len);
-
-                    *roots_ptr.offset(i as isize) = root_ptr;
-                    *sub_roots_lengths_ptr.offset(i as isize) = root_len as i32;
-                }
-            }
-
-            let commit_c = CommitC {
-                file_index: commit.file_index,
-                roots: roots_ptr,
-                roots_length: roots_len,
-                sub_roots_lengths: sub_roots_lengths_ptr,
-            };
-
-            commits_c.push(commit_c);
-        }
-
+        let mut commits_c = commit_to_commit_c(commits);
         // Call the CreateChallenge function
         let (c_arrays, c_lengths, main_array_length) = create_challenge(
             commits_c.as_mut_ptr(),
