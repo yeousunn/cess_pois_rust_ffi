@@ -32,6 +32,10 @@ type GetByteArrayAsStructFunc = unsafe extern "C" fn(*mut MyByte);
 type GetByteArrayAsStructArrayFunc = unsafe extern "C" fn(*mut MyByte, c_long);
 type GetByteArrayOfArrayFunc = unsafe extern "C" fn(*mut *mut u8, c_int, *mut c_int);
 
+type GetArrayFunc = extern "C" fn() -> (*const c_int, *const c_int);
+type FreeArrayFunc = extern "C" fn(*const c_int);
+type GetArrayOfArrayFunc = extern "C" fn() -> (*const *const i32, *const i32, i32);
+
 fn load_library() -> Library {
     unsafe {
         Library::new("cgo/main.so")
@@ -154,6 +158,83 @@ pub fn call_get_byte_array_of_array() {
         // Pass the array of pointers to the C function
         let data_length = byte_array_ptrs.len() as c_int;
         get_byte_array_of_array(byte_array_ptrs.as_mut_ptr(), data_length, sub_data_lengths.as_mut_ptr());
+    }
+}
+
+pub fn call_return_an_array() {
+    // Load the Go shared library
+    let lib = load_library();
+    unsafe {
+        // Get the symbols for the functions
+        let get_array: libloading::Symbol<GetArrayFunc> = lib
+            .get(b"ReturnAnArray")
+            .expect("Failed to retrieve symbol");
+        let free_array: libloading::Symbol<FreeArrayFunc> = lib
+            .get(b"FreeArray")
+            .expect("Failed to retrieve symbol");
+
+        // // Call the Go function
+        // let (go_array, go_array2)  = get_array();
+        // if !go_array.is_null() {
+        //     let array_len = 4; // Assuming the Go array has a length of 4
+        //     let slice = std::slice::from_raw_parts(go_array, array_len);
+        //     let rust_array = slice.to_vec();
+        //     println!("Received array from Go: {:?}", rust_array);
+
+        //     // Free the Go array
+        //     free_array(go_array as *const c_int);
+        // }
+
+        // if !go_array2.is_null() {
+        //     let array_len2 = 4; // Assuming the Go array has a length of 4
+        //     let slice = std::slice::from_raw_parts(go_array2, array_len2);
+        //     let rust_array = slice.to_vec();
+        //     println!("Received array 2 from Go: {:?}", rust_array);
+
+        //     // Free the Go array
+        //     free_array(go_array2 as *const c_int);
+        // }
+
+         // Call the Go function to get the arrays
+        let (arr1_ptr, arr2_ptr) = get_array() ;
+
+        // Convert the C arrays to Rust slices
+        let arr1_slice: &[c_int] = std::slice::from_raw_parts(arr1_ptr, 4);
+        let arr2_slice: &[c_int] = std::slice::from_raw_parts(arr2_ptr, 4);
+
+        // Convert the slices to Vec<i32>
+        let arr1_vec: Vec<i32> = arr1_slice.iter().map(|&val| val as i32).collect();
+        let arr2_vec: Vec<i32> = arr2_slice.iter().map(|&val| val as i32).collect();
+
+        // Print the arrays
+        println!("Array 1: {:?}", arr1_vec);
+        println!("Array 2: {:?}", arr2_vec);
+    }
+}
+
+pub fn call_return_array_of_array(){
+    // Load the Go shared library
+    let lib = load_library();
+    unsafe {
+        let get_array_of_array: libloading::Symbol<GetArrayOfArrayFunc> = lib
+            .get(b"ReturnArrayofArrays")
+            .expect("Failed to retrieve symbol");
+
+        let (c_arrays, c_lengths, main_array_length) = get_array_of_array();
+
+        let arrays = std::slice::from_raw_parts(c_arrays, main_array_length as usize);
+        let lengths = std::slice::from_raw_parts(c_lengths, main_array_length as usize);
+
+        println!("Main Array Length: {}", main_array_length);
+        let mut arrOfArr: Vec<&[i32]> = Vec::new();
+        for i in 0..main_array_length {
+            let sub_array = std::slice::from_raw_parts(arrays[i as usize], lengths[i as usize] as usize);
+
+            println!("Array {}: {:?}", i + 1, sub_array);
+            arrOfArr.push(sub_array);
+        }
+        println!("Array {:?}", arrOfArr);
+
     }
 }
 
@@ -347,4 +428,15 @@ mod tests {
             d,
         );
     }
+
+    #[test]
+    fn test_call_return_an_array(){
+        call_return_an_array()
+    }
+
+    #[test]
+    fn test_call_return_array_of_array(){
+        call_return_array_of_array()
+    }
+    
 }

@@ -2,4 +2,5 @@
 /Cargo.lock
 /Proofs
 /cgo
+/acc
 build_and_copy.sh
