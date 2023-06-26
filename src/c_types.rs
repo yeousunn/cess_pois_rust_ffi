@@ -1,7 +1,5 @@
 use gmp::mpz::Mpz;
-use std::os::raw::{
-    c_int, c_uchar, c_long
-};
+use std::os::raw::{c_int, c_long, c_uchar};
 
 pub type NodeType = c_int;
 
@@ -15,10 +13,9 @@ pub struct CommitC {
 
     // Length of root [][]byte
     pub roots_length: i32,
-    
+
     // Length of sub element of root [][]byte
     pub sub_roots_lengths: *mut i32,
-    
 }
 
 #[repr(C)]
