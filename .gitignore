@@ -1,0 +1,5 @@
+/target
+/Cargo.lock
+/Proofs
+/cgo
+build_and_copy.sh

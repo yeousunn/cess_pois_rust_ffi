@@ -1,0 +1,17 @@
+[package]
+name = "cess_pois_rust_ffi"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rust-gmp = "0.5.0"
+libc = "0.2.145"
+libloading = "0.8.0"
+num-bigint-dig = "0.8.2"
+num-integer = "0.1.45"
+num-traits = "0.2.15"
+rand = "0.8.5"
+rsa = "0.9.2"
+serde = { version = "1.0.164", features = ["derive"]}
