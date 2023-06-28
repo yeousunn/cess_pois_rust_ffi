@@ -4,12 +4,12 @@ use num_bigint_dig::BigUint;
 use crate::{
     c_types::CommitC,
     types::Commit,
-    utils::{c_pointer_to_i32_array_of_array, load_library, commit_to_commit_c, commit_c_array_to_go_commit_array},
+    utils::{c_pointer_to_i32_array_of_array, load_library, rust_commit_array_to_commit_c_array, commit_c_array_to_rust_commit_array, array_of_array_to_c_ptr},
 };
 use std::{
     ffi::CString,
     os::raw::{c_char, c_int, c_long},
-    time::Instant,
+    time::Instant, ptr,
 };
 
 type PerformPoisFunc = unsafe extern "C" fn(*mut c_char, *mut c_char, c_long, c_long, c_long);
@@ -29,7 +29,20 @@ type GenerateCommitChallengeFunc = unsafe extern "C" fn(
     c_long,
     c_long,
     c_long,
-) -> (*const *const i32, *const i32, i32);
+) -> (*mut *mut i32, *mut i32, i32);
+
+// GetCommitProofAndAccProof(generated_count, chal, chal_sub_arr_length, chal_length, key_n, key_g, k, n, d))
+type GetCommitProofAndAccProofFunc = unsafe extern "C" fn(
+    c_long,
+    *mut *mut c_int,
+    *const c_int,
+    c_int,
+    *mut c_char,
+    *mut c_char,
+    c_long,
+    c_long,
+    c_long,
+);
 
 pub fn call_perform_pois(key_n: BigUint, key_g: BigUint, k: i64, n: i64, d: i64) {
     // Load the Go dynamic library
@@ -124,7 +137,7 @@ pub fn call_get_commits(
             d,
         );
 
-        let commit = commit_c_array_to_go_commit_array(commit_c, length);
+        let commit = commit_c_array_to_rust_commit_array(commit_c, length);
     
         commit
     }
@@ -153,7 +166,7 @@ pub fn call_generate_commit_challenge(
         let g_str = key_g.to_string();
         let g_cstring = CString::new(g_str).expect("CString conversion failed");
 
-        let mut commits_c = commit_to_commit_c(commits);
+        let mut commits_c = rust_commit_array_to_commit_c_array(commits);
         // Call the CreateCommitChallenge function
         let (c_arrays, c_lengths, main_array_length) = generate_commit_challenge(
             generated_count,
@@ -169,5 +182,63 @@ pub fn call_generate_commit_challenge(
         let challenge = c_pointer_to_i32_array_of_array(c_arrays, c_lengths, main_array_length);
 
         challenge
+    }
+}
+
+
+pub fn call_get_commit_proof_and_acc_proof(
+    generated_count: i64,
+    chal: Vec<Vec<i32>>,
+    key_n: BigUint,
+    key_g: BigUint,
+    k: i64,
+    n: i64,
+    d: i64,
+){
+    let lib = load_library();
+    unsafe {
+        // Retrieve the symbol for the CreateCommitChallenge function
+        let get_commit_proof_and_acc_proof: Symbol<GetCommitProofAndAccProofFunc> = lib
+            .get(b"GetCommitProofAndAccProof")
+            .expect("Failed to retrieve symbol");
+
+        let n_str = key_n.to_string();
+        let n_cstring = CString::new(n_str).expect("CString conversion failed");
+
+        let g_str = key_g.to_string();
+        let g_cstring = CString::new(g_str).expect("CString conversion failed");
+
+        let length = chal.len() as i32;
+        let lengths: Vec<i32> = chal.iter().map(|sub_array| sub_array.len() as i32).collect();
+        let mut sub_arrays: Vec<Vec<i32>> = Vec::new();
+        let mut main_array: Vec<*mut i32> = Vec::new();
+
+        for sub_array in chal.clone() {
+            let mut sub_array_ptr: *mut i32 = ptr::null_mut();
+            if !sub_array.is_empty() {
+                sub_arrays.push(sub_array);
+                sub_array_ptr = sub_arrays.last_mut().unwrap().as_mut_ptr();
+            }
+            main_array.push(sub_array_ptr);
+        }
+
+        let lengths_ptr: *const i32 = lengths.as_ptr();
+        let main_array_ptr: *mut *mut i32 = main_array.as_mut_ptr();
+        get_commit_proof_and_acc_proof(
+            generated_count,
+            main_array_ptr,
+            lengths_ptr,
+            length,
+            n_cstring.into_raw() as *mut c_char,
+            g_cstring.into_raw() as *mut c_char,
+            k,
+            n,
+            d,
+        );
+
+        // Deallocate sub-arrays
+        for sub_array in sub_arrays {
+            drop(sub_array);
+        }
     }
 }

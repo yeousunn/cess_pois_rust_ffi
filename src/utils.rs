@@ -1,4 +1,5 @@
-use std::slice;
+use std::{slice, ptr};
+use std::mem::forget;
 
 use crate::c_types::CommitC;
 use crate::types::{RsaKey, Commit};
@@ -37,7 +38,7 @@ pub fn rsa_keygen(lambda: usize) -> RsaKey {
 }
 
 pub fn c_pointer_to_i32_array_of_array(
-    c_arrays: *const *const i32,
+    c_arrays: *mut *mut i32,
     c_lengths: *const i32,
     main_array_length: i32,
 ) -> Vec<Vec<i32>> {
@@ -55,7 +56,7 @@ pub fn c_pointer_to_i32_array_of_array(
     arr_of_arr
 }
 
-pub fn commit_to_commit_c(commits: &mut [Commit],) -> Vec<CommitC> {
+pub fn rust_commit_array_to_commit_c_array(commits: &mut [Commit],) -> Vec<CommitC> {
     unsafe {
         // Prepare the CommitC struct
         let mut commits_c: Vec<CommitC> = Vec::with_capacity(commits.len());
@@ -94,7 +95,7 @@ pub fn commit_to_commit_c(commits: &mut [Commit],) -> Vec<CommitC> {
     }
 }
 
-pub fn commit_c_array_to_go_commit_array(commits: *const CommitC, length: i64) -> Vec<Commit> {
+pub fn commit_c_array_to_rust_commit_array(commits: *const CommitC, length: i64) -> Vec<Commit> {
     let data_slice = unsafe { slice::from_raw_parts(commits, length as usize) };
 
     let mut go_commits = Vec::with_capacity(length as usize);
@@ -132,4 +133,31 @@ pub fn commit_c_array_to_go_commit_array(commits: *const CommitC, length: i64) -
     }
 
     go_commits
+}
+
+
+
+pub fn array_of_array_to_c_ptr(arr: Vec<Vec<i32>>) -> (*mut *mut i32, *mut i32, i32) {
+    let length = arr.len() as i32;
+    let mut lengths: Vec<i32> = arr.iter().map(|sub_array| sub_array.len() as i32).collect();
+    let mut main_array: Vec<*mut i32> = Vec::new();
+    let mut sub_arrays: Vec<Vec<i32>> = Vec::new();
+
+    for sub_array in arr {
+        let mut sub_array_ptr: *mut i32 = ptr::null_mut();
+        if !sub_array.is_empty() {
+            sub_arrays.push(sub_array);
+            sub_array_ptr = sub_arrays.last_mut().unwrap().as_mut_ptr();
+        }
+        main_array.push(sub_array_ptr);
+    }
+
+    let lengths_ptr = lengths.as_mut_ptr();
+    let main_array_ptr = main_array.as_mut_ptr();
+
+    // Prevent deallocation when vectors go out of scope
+    // std::mem::forget(main_array);
+    // std::mem::forget(sub_arrays);
+
+    (main_array_ptr, lengths_ptr, length)
 }
