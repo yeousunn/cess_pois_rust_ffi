@@ -1,3 +1,5 @@
+use std::slice;
+
 use crate::c_types::CommitC;
 use crate::types::{RsaKey, Commit};
 use libloading::Library;
@@ -34,12 +36,12 @@ pub fn rsa_keygen(lambda: usize) -> RsaKey {
     }
 }
 
-pub fn c_pointer_to_i64_array_of_array(
-    c_arrays: *const *const i64,
-    c_lengths: *const i64,
-    main_array_length: i64,
-) -> Vec<Vec<i64>> {
-    let mut arr_of_arr: Vec<Vec<i64>> = Vec::new();
+pub fn c_pointer_to_i32_array_of_array(
+    c_arrays: *const *const i32,
+    c_lengths: *const i32,
+    main_array_length: i32,
+) -> Vec<Vec<i32>> {
+    let mut arr_of_arr: Vec<Vec<i32>> = Vec::new();
     unsafe {
         let arrays = std::slice::from_raw_parts(c_arrays, main_array_length as usize);
         let lengths = std::slice::from_raw_parts(c_lengths, main_array_length as usize);
@@ -90,4 +92,44 @@ pub fn commit_to_commit_c(commits: &mut [Commit],) -> Vec<CommitC> {
         }
         commits_c
     }
+}
+
+pub fn commit_c_array_to_go_commit_array(commits: *const CommitC, length: i64) -> Vec<Commit> {
+    let data_slice = unsafe { slice::from_raw_parts(commits, length as usize) };
+
+    let mut go_commits = Vec::with_capacity(length as usize);
+
+    for i in 0..length {
+        let c = &data_slice[i as usize];
+
+        let roots_array_slice = unsafe {
+            slice::from_raw_parts(c.roots, c.roots_length as usize)
+        };
+        let roots_lengths_slice = unsafe {
+            slice::from_raw_parts(c.sub_roots_lengths, c.roots_length as usize)
+        };
+
+        let mut roots = Vec::with_capacity(c.roots_length as usize);
+
+        for j in 0..c.roots_length {
+            let byte_array_ptr = roots_array_slice[j as usize];
+            let byte_array_len = roots_lengths_slice[j as usize];
+
+            let byte_slice = unsafe {
+                slice::from_raw_parts(byte_array_ptr, byte_array_len as usize)
+            };
+
+            let new_byte_array = byte_slice.to_vec();
+            roots.push(new_byte_array);
+        }
+
+        let go_commit = Commit {
+            file_index: c.file_index,
+            roots,
+        };
+
+        go_commits.push(go_commit);
+    }
+
+    go_commits
 }
