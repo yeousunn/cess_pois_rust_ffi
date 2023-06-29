@@ -37,12 +37,12 @@ pub fn rsa_keygen(lambda: usize) -> RsaKey {
     }
 }
 
-pub fn c_pointer_to_i32_array_of_array(
-    c_arrays: *mut *mut i32,
+pub fn c_pointer_to_i64_array_of_array(
+    c_arrays: *mut *mut i64,
     c_lengths: *const i32,
     main_array_length: i32,
-) -> Vec<Vec<i32>> {
-    let mut arr_of_arr: Vec<Vec<i32>> = Vec::new();
+) -> Vec<Vec<i64>> {
+    let mut arr_of_arr: Vec<Vec<i64>> = Vec::new();
     unsafe {
         let arrays = std::slice::from_raw_parts(c_arrays, main_array_length as usize);
         let lengths = std::slice::from_raw_parts(c_lengths, main_array_length as usize);

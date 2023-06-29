@@ -1,10 +1,11 @@
+use libc::c_longlong;
 use libloading::Symbol;
 use num_bigint_dig::BigUint;
 
 use crate::{
     c_types::CommitC,
     types::Commit,
-    utils::{c_pointer_to_i32_array_of_array, load_library, rust_commit_array_to_commit_c_array, commit_c_array_to_rust_commit_array, array_of_array_to_c_ptr},
+    utils::{c_pointer_to_i64_array_of_array, load_library, rust_commit_array_to_commit_c_array, commit_c_array_to_rust_commit_array, array_of_array_to_c_ptr},
 };
 use std::{
     ffi::CString,
@@ -29,12 +30,12 @@ type GenerateCommitChallengeFunc = unsafe extern "C" fn(
     c_long,
     c_long,
     c_long,
-) -> (*mut *mut i32, *mut i32, i32);
+) -> (*mut *mut i64, *mut i32, i32);
 
 // GetCommitProofAndAccProof(generated_count, chal, chal_sub_arr_length, chal_length, key_n, key_g, k, n, d))
 type GetCommitProofAndAccProofFunc = unsafe extern "C" fn(
     c_long,
-    *mut *mut c_int,
+    *mut *mut c_longlong,
     *const c_int,
     c_int,
     *mut c_char,
@@ -151,7 +152,7 @@ pub fn call_generate_commit_challenge(
     k: i64,
     n: i64,
     d: i64,
-) -> Vec<Vec<i32>> {
+) -> Vec<Vec<i64>> {
     let lib = load_library();
 
     unsafe {
@@ -179,7 +180,7 @@ pub fn call_generate_commit_challenge(
             d,
         );
 
-        let challenge = c_pointer_to_i32_array_of_array(c_arrays, c_lengths, main_array_length);
+        let challenge = c_pointer_to_i64_array_of_array(c_arrays, c_lengths, main_array_length);
 
         challenge
     }
@@ -188,7 +189,7 @@ pub fn call_generate_commit_challenge(
 
 pub fn call_get_commit_proof_and_acc_proof(
     generated_count: i64,
-    chal: Vec<Vec<i32>>,
+    chal: Vec<Vec<i64>>,
     key_n: BigUint,
     key_g: BigUint,
     k: i64,
@@ -210,11 +211,11 @@ pub fn call_get_commit_proof_and_acc_proof(
 
         let length = chal.len() as i32;
         let lengths: Vec<i32> = chal.iter().map(|sub_array| sub_array.len() as i32).collect();
-        let mut sub_arrays: Vec<Vec<i32>> = Vec::new();
-        let mut main_array: Vec<*mut i32> = Vec::new();
+        let mut sub_arrays: Vec<Vec<i64>> = Vec::new();
+        let mut main_array: Vec<*mut i64> = Vec::new();
 
         for sub_array in chal.clone() {
-            let mut sub_array_ptr: *mut i32 = ptr::null_mut();
+            let mut sub_array_ptr: *mut i64 = ptr::null_mut();
             if !sub_array.is_empty() {
                 sub_arrays.push(sub_array);
                 sub_array_ptr = sub_arrays.last_mut().unwrap().as_mut_ptr();
@@ -223,7 +224,11 @@ pub fn call_get_commit_proof_and_acc_proof(
         }
 
         let lengths_ptr: *const i32 = lengths.as_ptr();
-        let main_array_ptr: *mut *mut i32 = main_array.as_mut_ptr();
+        let main_array_ptr: *mut *mut i64 = main_array.as_mut_ptr();
+
+        // let chall = c_pointer_to_i64_array_of_array(main_array_ptr, lengths_ptr, length);
+        // println!("Rust confirmation generatedChals: {:?}", chall);
+
         get_commit_proof_and_acc_proof(
             generated_count,
             main_array_ptr,

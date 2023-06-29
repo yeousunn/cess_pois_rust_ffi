@@ -103,7 +103,7 @@ extern struct GetCommits_return GetCommits(int64_t generated_count, char* keyN, 
 
 /* Return type for GenerateCommitChallenge */
 struct GenerateCommitChallenge_return {
-	int** r0;
+	int64_t** r0;
 	int* r1;
 	int r2;
 };
@@ -113,7 +113,7 @@ struct GenerateCommitChallenge_return {
 // types [][]int64
 //
 extern struct GenerateCommitChallenge_return GenerateCommitChallenge(int64_t generated_count, CommitC* commitsC, long int length, char* keyN, char* keyG, int64_t kC, int64_t nC, int64_t dC);
-extern void GetCommitProofAndAccProof(int64_t generated_count, int** chalPtr, int* lengths, int length, char* keyN, char* keyG, int64_t kC, int64_t nC, int64_t dC);
+extern void GetCommitProofAndAccProof(int64_t generated_count, int64_t** chalPtr, int* lengths, int length, char* keyN, char* keyG, int64_t kC, int64_t nC, int64_t dC);
 extern void GetByteArray(unsigned char* b, int length);
 extern void GetByteArrayAsStruct(MyByte* b);
 extern void GetByteArrayAsStructArray(MyByte* myByte, long int length);

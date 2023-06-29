@@ -72,7 +72,7 @@ mod tests {
 
         let mut commits = call_get_commits(generated_count, key_n.clone(), key_g.clone(), k, n, d);
         let chal = call_generate_commit_challenge(generated_count, &mut commits, key_n.clone(), key_g.clone(), k, n, d);
-        println!("challenge: {:?}", chal);
+        // println!("Rust generatedChals: {:?}", chal);
 
         // Test call_get_commit_proof_and_acc_proof
         call_get_commit_proof_and_acc_proof(generated_count, chal, key_n.clone(), key_g.clone(), k, n, d);

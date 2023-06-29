@@ -1,5 +1,5 @@
 
-use crate::{c_types::MyByte, utils::c_pointer_to_i32_array_of_array};
+use crate::{c_types::MyByte, utils::c_pointer_to_i64_array_of_array};
 use std::os::raw::{c_char, c_int, c_long};
 use libloading::Symbol;
 
@@ -18,7 +18,7 @@ type GetByteArrayOfArrayFunc = unsafe extern "C" fn(*mut *mut u8, c_int, *mut c_
 
 type GetArrayFunc = extern "C" fn() -> (*mut c_int, *mut c_int);
 type FreeArrayFunc = extern "C" fn(*mut c_int);
-type GetArrayOfArrayFunc = extern "C" fn() -> (*mut *mut i32, *mut i32, i32);
+type GetArrayOfArrayFunc = extern "C" fn() -> (*mut *mut i64, *mut i32, i32);
 
 pub fn call_get_byte_array() {
     let lib = load_library();
@@ -144,7 +144,7 @@ pub fn call_return_array_of_array() {
 
         let (c_arrays, c_lengths, main_array_length) = get_array_of_array();
 
-        let array = c_pointer_to_i32_array_of_array(c_arrays, c_lengths, main_array_length);
+        let array = c_pointer_to_i64_array_of_array(c_arrays, c_lengths, main_array_length);
 
         println!("Array {:?}", array);
     }
