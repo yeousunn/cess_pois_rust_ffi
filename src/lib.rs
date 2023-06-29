@@ -8,20 +8,24 @@ mod examples;
 mod tests {
     use crate::{
         ffi::{call_generate_commit_challenge},
-        utils::rsa_keygen, examples::{call_return_array_of_array, call_return_an_array}, types::Commit,
+        utils::{rsa_keygen, init_common_params}, examples::{call_return_array_of_array, call_return_an_array}, types::Commit, c_types::CommonParam,
     };
 
-    #[test]
-    fn test_generate_commit_challenge() {
-        let generated_count = 4;
+    fn init_params() -> CommonParam{
         let rsa_key = rsa_keygen(2048);
-        let key_n = rsa_key.n;
-        let key_g = rsa_key.g;
-
+      
         let k: i64 = 7;
         // let n: i64 = 1024 * 1024 * 4;
         let n: i64 = 512;
         let d: i64 = 64;
+    
+        init_common_params(rsa_key, k, n, d)
+    }
+    #[test]
+    fn test_generate_commit_challenge() {
+        
+
+        let mut common_param = init_params();
 
         let mut commits = vec![
             Commit {
@@ -36,7 +40,10 @@ mod tests {
         
         let id = "test miner id";
 
-        let chal = call_generate_commit_challenge(generated_count, &mut commits, key_n.clone(), key_g.clone(), k, n, d, id);
+        let chal = call_generate_commit_challenge(
+            &mut commits, 
+            &mut common_param,
+            id);
         println!("Rust generatedChals: {:?}", chal);
 
     }

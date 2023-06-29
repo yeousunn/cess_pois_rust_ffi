@@ -1,7 +1,9 @@
+use std::ffi::CString;
+use std::os::raw::c_char;
 use std::{slice, ptr};
 use std::mem::forget;
 
-use crate::c_types::CommitC;
+use crate::c_types::{CommitC, CommonParam};
 use crate::types::{RsaKey, Commit};
 use libloading::Library;
 use num_bigint_dig::{BigUint, RandBigInt};
@@ -34,6 +36,25 @@ pub fn rsa_keygen(lambda: usize) -> RsaKey {
     RsaKey {
         n: n.clone(),
         g: g.clone(),
+    }
+}
+
+pub fn init_common_params(rsa_key: RsaKey, k: i64, n: i64, d: i64) -> CommonParam {
+    let key_n = rsa_key.n;
+    let key_g = rsa_key.g;
+
+    let n_str = key_n.to_string();
+    let n_cstring = CString::new(n_str).expect("CString conversion failed");
+
+    let g_str = key_g.to_string();
+    let g_cstring = CString::new(g_str).expect("CString conversion failed");
+
+    CommonParam {
+        key_n: n_cstring.into_raw() as *mut c_char,
+        key_g: g_cstring.into_raw() as *mut c_char,
+        k,
+        n,
+        d,
     }
 }
 

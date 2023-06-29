@@ -95,7 +95,7 @@ struct GenerateCommitChallenge_return {
 // are for returning [][]int64 array as cgo does not support returning
 // types [][]int64
 //
-extern struct GenerateCommitChallenge_return GenerateCommitChallenge(int64_t generated_count, CommitC* commitsC, long int length, char* keyN, char* keyG, int64_t kC, int64_t nC, int64_t dC, unsigned char* IDPtr, int IDLength);
+extern struct GenerateCommitChallenge_return GenerateCommitChallenge(CommitC* commitsC, long int length, CommonParam* commonParams, unsigned char* IDPtr, int IDLength);
 extern void GetByteArray(unsigned char* b, int length);
 extern void GetByteArrayAsStruct(MyByte* b);
 extern void GetByteArrayAsStructArray(MyByte* myByte, long int length);

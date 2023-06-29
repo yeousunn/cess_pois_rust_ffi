@@ -1,7 +1,7 @@
 // use gmp::mpz::Mpz;
 use std::os::raw::{
     // c_int, 
-    c_long, 
+    c_long, c_char, c_uchar, 
     // c_uchar
 };
 
@@ -76,4 +76,13 @@ pub struct CommitC {
 pub struct MyByte {
     pub b: *mut u8,
     pub length: c_long,
+}
+
+#[repr(C)]
+pub struct CommonParam {
+    pub key_n: *mut c_char,
+    pub key_g: *mut c_char,
+    pub k: i64,
+    pub n: i64,
+    pub d: i64,
 }
