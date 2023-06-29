@@ -84,23 +84,6 @@ extern "C" {
 #endif
 
 
-// PerformPois(keyC *C.RsaKeyC, kC C.int64_t, nC C.int64_t, dC C.int64_t)
-// replaced keyC *C.RsaKeyC with two string parameters
-// keyN string, keyG string
-//
-extern void PerformPois(char* keyN, char* keyG, int64_t kC, int64_t nC, int64_t dC);
-
-// Return the count of generated file
-//
-extern int64_t InitializePoisArtifacts(char* keyN, char* keyG, int64_t kC, int64_t nC, int64_t dC);
-
-/* Return type for GetCommits */
-struct GetCommits_return {
-	CommitC* r0;
-	long int r1;
-};
-extern struct GetCommits_return GetCommits(int64_t generated_count, char* keyN, char* keyG, int64_t kC, int64_t nC, int64_t dC);
-
 /* Return type for GenerateCommitChallenge */
 struct GenerateCommitChallenge_return {
 	int64_t** r0;
@@ -112,8 +95,7 @@ struct GenerateCommitChallenge_return {
 // are for returning [][]int64 array as cgo does not support returning
 // types [][]int64
 //
-extern struct GenerateCommitChallenge_return GenerateCommitChallenge(int64_t generated_count, CommitC* commitsC, long int length, char* keyN, char* keyG, int64_t kC, int64_t nC, int64_t dC);
-extern void GetCommitProofAndAccProof(int64_t generated_count, int64_t** chalPtr, int* lengths, int length, char* keyN, char* keyG, int64_t kC, int64_t nC, int64_t dC);
+extern struct GenerateCommitChallenge_return GenerateCommitChallenge(int64_t generated_count, CommitC* commitsC, long int length, char* keyN, char* keyG, int64_t kC, int64_t nC, int64_t dC, unsigned char* IDPtr, int IDLength);
 extern void GetByteArray(unsigned char* b, int length);
 extern void GetByteArrayAsStruct(MyByte* b);
 extern void GetByteArrayAsStructArray(MyByte* myByte, long int length);
