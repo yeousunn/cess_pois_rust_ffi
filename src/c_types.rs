@@ -1,11 +1,8 @@
-// use gmp::mpz::Mpz;
 use std::os::raw::{
-    // c_int, 
-    c_long, c_char, c_uchar, 
-    // c_uchar
+    c_int, c_long, c_char, c_uchar, 
 };
 
-// pub type NodeType = c_int;
+pub type NodeType = c_int;
 
 // If pass as []CommitC
 // Remember to pass length of the array []CommitC
@@ -57,20 +54,32 @@ pub struct CommitC {
 //     pub nodes_count: i32,
 // }
 
-// #[repr(C)]
-// pub struct MhtProofC {
-//     index: NodeType,
-//     label: *mut c_uchar,
-//     paths: *mut *mut c_uchar,
-//     locs: *mut c_uchar,
-// }
+#[derive(Debug)]
+#[repr(C)]
+pub struct MhtProofC {
+    pub index: NodeType,
+    pub label: *mut c_uchar,
+    pub label_length: c_int,
 
-// #[repr(C)]
-// pub struct CommitProofC {
-//     node: *mut MhtProofC,
-//     parents: *mut *mut MhtProofC,
-//     parents_count: c_int,
-// }
+    pub paths: *mut *mut c_uchar,
+    pub sub_paths_lengths: *mut c_int,
+    pub path_length: c_int,
+
+    pub locs: *mut c_uchar,
+    pub locs_length: c_int,
+}
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct CommitProofC {
+    pub node: *mut MhtProofC,
+
+    // This is array of pointers
+    // []*MhtProof so it is single dimension
+    // and require only the length of array when passing to C
+    pub parents: *mut *mut MhtProofC,
+    pub parents_length: c_int,
+}
 
 #[repr(C)]
 pub struct MyByte {
@@ -85,4 +94,28 @@ pub struct CommonParam {
     pub k: i64,
     pub n: i64,
     pub d: i64,
+}
+
+#[repr(C)]
+pub struct ProverID {
+    pub id: *mut c_char, // Pointer to ID []byte
+    pub length: c_int, // Length of ID []byte
+}
+
+// Some types that can be represented by [][]int64 are
+// Challenge
+// [][]int64
+#[repr(C)]
+pub struct I64ArrOfArr {
+    pub main_array: *mut *mut i64,
+    pub sub_array_lengths: *mut i32,
+    pub length: i32,
+}
+
+// i32ArrOfArr
+#[repr(C)]
+pub struct I32ArrOfArr {
+    pub main_array: *mut *mut i32,
+    pub sub_array_length: *mut i32,
+    pub length: i32,
 }

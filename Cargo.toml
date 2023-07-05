@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rust-gmp = "0.5.0"
+# rust-gmp = "0.5.0"
 libc = "0.2.145"
 libloading = "0.8.0"
 num-bigint-dig = "0.8.2"

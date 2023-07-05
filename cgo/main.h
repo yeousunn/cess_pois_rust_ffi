@@ -90,12 +90,8 @@ struct GenerateCommitChallenge_return {
 	int* r1;
 	int r2;
 };
-
-// The parameters: dataPtr **C.int64_t, rows *C.int, cols *C.int
-// are for returning [][]int64 array as cgo does not support returning
-// types [][]int64
-//
-extern struct GenerateCommitChallenge_return GenerateCommitChallenge(CommitC* commitsC, long int length, CommonParam* commonParams, unsigned char* IDPtr, int IDLength);
+extern struct GenerateCommitChallenge_return GenerateCommitChallenge(CommitC* commitsC, int length, CommonParam* commonParamsC, ProverID* proverID);
+extern void VerifyCommitAndAccProofs(CommitProofC** commitProofC, int commitProof_length, I64ArrOfArr* challengeC, CommonParam* commonParamsC, ProverID* proverIDC);
 extern void GetByteArray(unsigned char* b, int length);
 extern void GetByteArrayAsStruct(MyByte* b);
 extern void GetByteArrayAsStructArray(MyByte* myByte, long int length);
@@ -116,6 +112,7 @@ struct ReturnArrayofArrays_return {
 	int r2;
 };
 extern struct ReturnArrayofArrays_return ReturnArrayofArrays();
+extern void GetOuterArrOfArrWithInner(Outer** outer);
 
 #ifdef __cplusplus
 }

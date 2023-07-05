@@ -3,7 +3,7 @@ use std::os::raw::c_char;
 use std::{slice, ptr};
 use std::mem::forget;
 
-use crate::c_types::{CommitC, CommonParam};
+use crate::c_types::{CommitC, CommonParam, I64ArrOfArr};
 use crate::types::{RsaKey, Commit};
 use libloading::Library;
 use num_bigint_dig::{BigUint, RandBigInt};
@@ -58,15 +58,15 @@ pub fn init_common_params(rsa_key: RsaKey, k: i64, n: i64, d: i64) -> CommonPara
     }
 }
 
-pub fn c_pointer_to_i64_array_of_array(
-    c_arrays: *mut *mut i64,
-    c_lengths: *const i32,
+pub fn c_ptr_to_i64_array_of_array(
+    main_array: *mut *mut i64,
+    sub_array_lengths: *const i32,
     main_array_length: i32,
 ) -> Vec<Vec<i64>> {
     let mut arr_of_arr: Vec<Vec<i64>> = Vec::new();
     unsafe {
-        let arrays = std::slice::from_raw_parts(c_arrays, main_array_length as usize);
-        let lengths = std::slice::from_raw_parts(c_lengths, main_array_length as usize);
+        let arrays = std::slice::from_raw_parts(main_array, main_array_length as usize);
+        let lengths = std::slice::from_raw_parts(sub_array_lengths, main_array_length as usize);
 
         for i in 0..main_array_length {
             let sub_array =
@@ -75,6 +75,40 @@ pub fn c_pointer_to_i64_array_of_array(
         }
     }
     arr_of_arr
+}
+
+pub fn i64_array_of_array_to_c_ptr(arr: Vec<Vec<i64>>) -> I64ArrOfArr { // (*mut *mut i64, *const i32, i32) {
+    let (main_array_ptr, lengths_ptr, length) = {
+        let length = arr.len() as i32;
+        let mut lengths: Vec<i32> = arr.iter().map(|sub_array| sub_array.len() as i32).collect();
+        let mut main_array: Vec<*mut i64> = Vec::new();
+        let mut sub_arrays: Vec<Vec<i64>> = Vec::new();
+
+        for sub_array in arr {
+            let mut sub_array_ptr: *mut i64 = ptr::null_mut();
+            if !sub_array.is_empty() {
+                sub_arrays.push(sub_array);
+                sub_array_ptr = sub_arrays.last_mut().unwrap().as_mut_ptr();
+            }
+            main_array.push(sub_array_ptr);
+        }
+
+        let lengths_ptr = lengths.as_mut_ptr();
+        let main_array_ptr = main_array.as_mut_ptr();
+
+        // Prevent the vectors from being deallocated when going out of scope
+        std::mem::forget(sub_arrays);
+        std::mem::forget(lengths);
+        std::mem::forget(main_array);
+
+        (main_array_ptr, lengths_ptr, length)
+    };
+
+    I64ArrOfArr {
+        main_array: main_array_ptr,
+        sub_array_lengths: lengths_ptr,
+        length,
+    }
 }
 
 pub fn rust_commit_array_to_commit_c_array(commits: &mut [Commit],) -> Vec<CommitC> {
@@ -158,27 +192,3 @@ pub fn commit_c_array_to_rust_commit_array(commits: *const CommitC, length: i64)
 
 
 
-pub fn array_of_array_to_c_ptr(arr: Vec<Vec<i32>>) -> (*mut *mut i32, *mut i32, i32) {
-    let length = arr.len() as i32;
-    let mut lengths: Vec<i32> = arr.iter().map(|sub_array| sub_array.len() as i32).collect();
-    let mut main_array: Vec<*mut i32> = Vec::new();
-    let mut sub_arrays: Vec<Vec<i32>> = Vec::new();
-
-    for sub_array in arr {
-        let mut sub_array_ptr: *mut i32 = ptr::null_mut();
-        if !sub_array.is_empty() {
-            sub_arrays.push(sub_array);
-            sub_array_ptr = sub_arrays.last_mut().unwrap().as_mut_ptr();
-        }
-        main_array.push(sub_array_ptr);
-    }
-
-    let lengths_ptr = lengths.as_mut_ptr();
-    let main_array_ptr = main_array.as_mut_ptr();
-
-    // Prevent deallocation when vectors go out of scope
-    // std::mem::forget(main_array);
-    // std::mem::forget(sub_arrays);
-
-    (main_array_ptr, lengths_ptr, length)
-}

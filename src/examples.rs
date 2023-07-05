@@ -1,5 +1,5 @@
 
-use crate::{c_types::MyByte, utils::c_pointer_to_i64_array_of_array};
+use crate::{c_types::MyByte, utils::c_ptr_to_i64_array_of_array};
 use std::os::raw::{c_char, c_int, c_long};
 use libloading::Symbol;
 
@@ -144,7 +144,7 @@ pub fn call_return_array_of_array() {
 
         let (c_arrays, c_lengths, main_array_length) = get_array_of_array();
 
-        let array = c_pointer_to_i64_array_of_array(c_arrays, c_lengths, main_array_length);
+        let array = c_ptr_to_i64_array_of_array(c_arrays, c_lengths, main_array_length);
 
         println!("Array {:?}", array);
     }
