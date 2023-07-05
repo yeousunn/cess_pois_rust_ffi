@@ -49,8 +49,10 @@ mod tests {
         ];
         
         let id = "test miner id";
+        let path = "cgo/main.so";
 
         let chal = call_generate_commit_challenge(
+            path,
             &mut commits, 
             &mut common_param,
             id);
@@ -91,7 +93,10 @@ mod tests {
             vec![4, 4059, 21, 24, 35, 53, 47, 4, 1],
         ];
 
+        let path = "cgo/main.so";
+
         call_verify_commit_and_acc_proofs(
+            path,
             commit_proof_arr_of_arr,
             challenge,
             &mut common_param,

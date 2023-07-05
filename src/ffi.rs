@@ -24,11 +24,12 @@ type VerifyCommitAndAccProofsFunc = unsafe extern "C" fn(
 );
 
 pub fn call_generate_commit_challenge(
+    path: &str,
     commits: &mut [Commit],
     common_params: &mut CommonParam,
     id: &str,
 ) -> Vec<Vec<i64>> {
-    let lib = load_library("cgo/main.so");
+    let lib = load_library(path);
 
     unsafe {
         let generate_commit_challenge: Symbol<GenerateCommitChallengeFunc> = lib
@@ -55,12 +56,13 @@ pub fn call_generate_commit_challenge(
 }
 
 pub fn call_verify_commit_and_acc_proofs(
+    path: &str,
     commit_proof: Vec<Vec<CommitProof>>,
     challenge: Vec<Vec<i64>>,
     common_params: &mut CommonParam,
     id: &str,
 ) {
-    let lib = load_library("cgo/main.so");
+    let lib = load_library(path);
 
     unsafe{
         let verify_commit_and_acc_proofs: Symbol<VerifyCommitAndAccProofsFunc> = lib
