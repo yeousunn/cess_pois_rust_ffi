@@ -21,7 +21,7 @@ type FreeArrayFunc = extern "C" fn(*mut c_int);
 type GetArrayOfArrayFunc = extern "C" fn() -> (*mut *mut i64, *mut i32, i32);
 
 pub fn call_get_byte_array() {
-    let lib = load_library();
+    let lib = load_library("cgo/main.so");
     unsafe {
         // Pass the byte array to the C function
         let get_byte_array: Symbol<GetByteArrayFunc> =
@@ -35,7 +35,7 @@ pub fn call_get_byte_array() {
 }
 
 pub fn call_get_byte_array_as_struct() {
-    let lib = load_library();
+    let lib = load_library("cgo/main.so");
     unsafe {
         // Pass the byte array to the C function
         let get_byte_array_as_struct: Symbol<GetByteArrayAsStructFunc> = lib
@@ -54,7 +54,7 @@ pub fn call_get_byte_array_as_struct() {
 }
 
 pub fn call_get_byte_array_as_struct_array() {
-    let lib = load_library();
+    let lib = load_library("cgo/main.so");
     unsafe {
         // Pass the byte array to the C function
         let get_byte_array_by_struct: Symbol<GetByteArrayAsStructArrayFunc> = lib
@@ -80,7 +80,7 @@ pub fn call_get_byte_array_as_struct_array() {
 }
 
 pub fn call_get_byte_array_of_array() {
-    let lib = load_library();
+    let lib = load_library("cgo/main.so");
     unsafe {
         let get_byte_array_of_array: Symbol<GetByteArrayOfArrayFunc> = lib
             .get(b"GetByteArrayOfArray")
@@ -108,7 +108,7 @@ pub fn call_get_byte_array_of_array() {
 
 pub fn call_return_an_array() {
     // Load the Go shared library
-    let lib = load_library();
+    let lib = load_library("cgo/main.so");
     unsafe {
         // Get the symbols for the functions
         let get_array: libloading::Symbol<GetArrayFunc> = lib
@@ -136,7 +136,7 @@ pub fn call_return_an_array() {
 
 pub fn call_return_array_of_array() {
     // Load the Go shared library
-    let lib = load_library();
+    let lib = load_library("cgo/main.so");
     unsafe {
         let get_array_of_array: libloading::Symbol<GetArrayOfArrayFunc> = lib
             .get(b"ReturnArrayofArrays")

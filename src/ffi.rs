@@ -28,7 +28,7 @@ pub fn call_generate_commit_challenge(
     common_params: &mut CommonParam,
     id: &str,
 ) -> Vec<Vec<i64>> {
-    let lib = load_library();
+    let lib = load_library("cgo/main.so");
 
     unsafe {
         let generate_commit_challenge: Symbol<GenerateCommitChallengeFunc> = lib
@@ -60,7 +60,7 @@ pub fn call_verify_commit_and_acc_proofs(
     common_params: &mut CommonParam,
     id: &str,
 ) {
-    let lib = load_library();
+    let lib = load_library("cgo/main.so");
 
     unsafe{
         let verify_commit_and_acc_proofs: Symbol<VerifyCommitAndAccProofsFunc> = lib

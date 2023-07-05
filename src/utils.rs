@@ -12,8 +12,8 @@ use num_traits::One;
 use rsa::traits::PublicKeyParts;
 use rsa::RsaPrivateKey;
 
-pub fn load_library() -> Library {
-    unsafe { Library::new("cgo/main.so").expect("Failed to load the dynamic library") }
+pub fn load_library(path: &str) -> Library {
+    unsafe { Library::new(path).expect("Failed to load the dynamic library") }
 }
 
 pub fn rsa_keygen(lambda: usize) -> RsaKey {
